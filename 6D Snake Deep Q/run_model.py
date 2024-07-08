@@ -9,7 +9,7 @@ from renderer import Renderer
 import time
 import numpy as np
 
-def run_model(model_path, render=False, num_episodes=100):
+def run_model(model_path, render=False, num_episodes=100, duration=None):
     renderer = Renderer() if render else None
     game = SnakeGame()
     state_shape = game.get_state().shape
@@ -21,6 +21,7 @@ def run_model(model_path, render=False, num_episodes=100):
     agent.load_models(model_path)
     agent.q_network.eval()
     print(agent.epsilon, agent.epsilon_min, "asd09as09jas")
+
     episode_lengths = []
     episode_rewards = []
     episode_apples = []
@@ -32,7 +33,7 @@ def run_model(model_path, render=False, num_episodes=100):
         episode_reward = 0
         episode_steps = 0
 
-        while not game.done:
+        while not game.done and (duration is None or time.time() - start_time < duration):
             state_tensor = torch.FloatTensor(state).unsqueeze(0).to(device)
             action = agent.choose_action(state_tensor)
             next_state, reward, done = game.step(action)
@@ -81,6 +82,7 @@ if __name__ == "__main__":
     parser.add_argument("model_path", type=str, help="Path to the trained model file")
     parser.add_argument("--render", action="store_true", help="Render the game while running")
     parser.add_argument("--episodes", type=int, default=100, help="Number of episodes to run")
+    parser.add_argument("--duration", type=float, default=None, help="Duration of the run in seconds (default: entire audio clip)")
     args = parser.parse_args()
 
-    run_model(args.model_path, args.render, args.episodes)
+    run_model(args.model_path, args.render, args.episodes, args.duration)

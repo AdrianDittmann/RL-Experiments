@@ -1,3 +1,4 @@
+#dqn.py 
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -44,7 +45,14 @@ class DQNAgent:
         self.batch_size = batch_size
         
         self.memory = deque(maxlen=memory_size)
-        self.device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
+        
+        # Check available devices and set the device accordingly
+        if torch.cuda.is_available():
+            self.device = torch.device('cuda')
+        elif torch.backends.mps.is_available():
+            self.device = torch.device('mps')
+        else:
+            self.device = torch.device('cpu')
         
         # Calculate input size based on the state shape
         self.input_size = input_channels
@@ -61,7 +69,7 @@ class DQNAgent:
         if np.random.random() < self.epsilon:
             return random.randrange(self.n_actions)
         
-        #state = torch.tensor(state, dtype=torch.float).unsqueeze(0).to(self.device)
+        state = state.to(self.device)
         with torch.no_grad():
             q_values = self.q_network(state)
         
@@ -93,9 +101,6 @@ class DQNAgent:
         loss.backward()
         torch.nn.utils.clip_grad_norm_(self.q_network.parameters(), max_norm=1.0)
         self.optimizer.step()
-        
-        # self.epsilon = max(self.epsilon_min, self.epsilon - self.epsilon_decay) # move to step
-
     
     def update_target_network(self):
         self.target_network.load_state_dict(self.q_network.state_dict())
@@ -103,6 +108,12 @@ class DQNAgent:
     def save_models(self, path='dqn_model.pth'):
         torch.save(self.q_network.state_dict(), 'checkpoints/' + path)
     
-    def load_models(self, path='dqn_model.pth'):
-        self.q_network.load_state_dict(torch.load('checkpoints/' + path))
-        self.target_network.load_state_dict(self.q_network.state_dict())
+    def load_models(self, path='dqn_model.pth', map_location=None):
+        if map_location is None:
+            map_location = self.device
+        try:
+            self.q_network.load_state_dict(torch.load('checkpoints/' + path, map_location=map_location))
+            self.target_network.load_state_dict(self.q_network.state_dict())
+        except FileNotFoundError:
+            print(f"Error: Model file 'checkpoints/{path}' not found.")
+            exit(1)

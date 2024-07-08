@@ -1,4 +1,4 @@
-
+#config.py 
 import pygame
 import math
 import time
@@ -7,7 +7,7 @@ import numpy as np
 from math import *
 from audio_processor import get_frequency_data
 
-song_path = "music/x.ogg"
+song_path = "music/synth.mp3"
 play_song = True
 
 # Load audio and extract features
@@ -17,6 +17,7 @@ class ParamSpace:
     def __init__(self):
         self.sim_start = time.time()
         self.time = 0
+        self.duration = librosa.get_duration(y=y, sr=sr) 
         
         # Extract audio features
         print('loading amplitude')
@@ -54,7 +55,7 @@ class ParamSpace:
         self.time = time.time() - self.sim_start
 
     def get_time(self):
-        return self.time
+        return min(self.time, self.duration)
 
     def interpolate(self, t, times, values):
         if t <= times[0]:

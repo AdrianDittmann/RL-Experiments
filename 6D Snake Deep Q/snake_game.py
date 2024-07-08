@@ -1,4 +1,4 @@
-
+#snake_game.py 
 import random
 from config import *
 import numpy as np
